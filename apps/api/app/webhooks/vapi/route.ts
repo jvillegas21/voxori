@@ -32,6 +32,14 @@ interface VapiCallEvent {
   };
 }
 
+function getCallLogContext(body: VapiCallEvent) {
+  return {
+    eventType: body.message.type,
+    callId: body.message.call?.id ?? null,
+    assistantId: body.message.call?.assistantId ?? null,
+  };
+}
+
 export async function POST(request: NextRequest) {
   // Verify webhook secret
   const secret = request.headers.get('x-vapi-secret');
@@ -48,6 +56,7 @@ export async function POST(request: NextRequest) {
 
   const { type } = body.message;
   const db = createServiceRoleClient();
+  const context = getCallLogContext(body);
 
   try {
     switch (type) {
@@ -56,7 +65,7 @@ export async function POST(request: NextRequest) {
         if (!call) break;
         // Call record is created when call ends with full data.
         // On call-started we log for observability only.
-        console.log('[vapi] call-started', { callId: call.id });
+        console.log('[vapi] call-started', context);
         break;
       }
 
@@ -73,32 +82,66 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (!agent) {
-          console.warn('[vapi] call-ended: no agent found for assistantId', call.assistantId);
+          console.warn('[vapi] call-ended: no agent found for assistant mapping', context);
+          break;
+        }
+
+        // Idempotency guard: avoid duplicate call-ended inserts when provider retries.
+        const startedAt = call.startedAt ?? new Date().toISOString();
+        const endedAt = call.endedAt ?? new Date().toISOString();
+        const callerNumber = call.customer?.number ?? null;
+        let existingCallQuery = db
+          .from('calls')
+          .select('id')
+          .eq('agent_id', agent.id)
+          .eq('tenant_id', agent.tenant_id)
+          .eq('started_at', startedAt)
+          .eq('ended_at', endedAt);
+
+        existingCallQuery =
+          callerNumber === null
+            ? existingCallQuery.is('caller_number', null)
+            : existingCallQuery.eq('caller_number', callerNumber);
+
+        const { data: existingCall } = await existingCallQuery.maybeSingle();
+
+        if (existingCall) {
+          console.log('[vapi] duplicate call-ended event ignored', {
+            ...context,
+            tenantId: agent.tenant_id,
+            agentId: agent.id,
+            existingCallId: existingCall.id,
+          });
           break;
         }
 
         await db.from('calls').insert({
           agent_id: agent.id,
           tenant_id: agent.tenant_id,
-          caller_number: call.customer?.number ?? null,
+          caller_number: callerNumber,
           duration_seconds: artifact?.durationSeconds ?? null,
           status: 'completed',
           outcome: null,
           recording_url: artifact?.recordingUrl ?? null,
           transcript: artifact?.transcript ?? null,
           summary: artifact?.summary ?? null,
-          started_at: call.startedAt ?? new Date().toISOString(),
-          ended_at: call.endedAt ?? new Date().toISOString(),
+          started_at: startedAt,
+          ended_at: endedAt,
+        });
+        console.log('[vapi] call-ended persisted', {
+          ...context,
+          tenantId: agent.tenant_id,
+          agentId: agent.id,
         });
         break;
       }
 
       default:
         // Other event types (transcript, hang, etc.) — log and ignore for Phase 1
-        console.log('[vapi] unhandled event type', type);
+        console.log('[vapi] unhandled event type', context);
     }
   } catch (err) {
-    console.error('[vapi] webhook processing error', err);
+    console.error('[vapi] webhook processing error', { ...context, err });
     // Return 200 to prevent Vapi retry storms; log for investigation
   }
 

@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateRequest } from 'twilio';
 
+/** URL Twilio signed (public https host), not localhost — required behind ngrok / reverse proxies. */
+function getTwilioRequestUrl(request: NextRequest): string {
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const host = forwardedHost ?? request.headers.get('host') ?? '';
+  const proto = forwardedProto ?? request.nextUrl.protocol.replace(':', '');
+  const pathWithQuery = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+  return `${proto}://${host}${pathWithQuery}`;
+}
+
 export async function POST(request: NextRequest) {
   const authToken = process.env.TWILIO_AUTH_TOKEN!;
-  const url = request.url;
+  const url = getTwilioRequestUrl(request);
 
   // Parse form-encoded Twilio webhook body
   const body = await request.text();

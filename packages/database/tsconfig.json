@@ -1,5 +1,5 @@
 {
-  "extends": "@voxori/config/typescript",
+  "extends": "../config/typescript/base.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src"

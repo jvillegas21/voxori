@@ -1,4 +1,5 @@
 export type LlmModel = 'gpt-4o' | 'claude-3-5-sonnet';
+export type AgentVertical = 'realtor' | 'dental' | 'legal' | 'general';
 
 export interface Agent {
   id: string;
@@ -16,6 +17,10 @@ export interface AgentConfig {
   greeting?: string;
   fallbackMessage?: string;
   timezone?: string;
-  vertical?: 'realtor' | 'dental' | 'legal' | 'general';
+  vertical?: AgentVertical;
   recordingDisclosure?: string;
+  vapiAssistantId?: string;
+  templateId?: string;
+  templateVersion?: number;
+  businessProfile?: Record<string, unknown>;
 }

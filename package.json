@@ -6,6 +6,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "db:local": "bash scripts/setup-supabase-local.sh",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
