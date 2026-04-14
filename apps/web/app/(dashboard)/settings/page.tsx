@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createBrowserClient } from '@supabase/ssr';
 import { trpc } from '@/lib/trpc';
 import { createClient } from '@/lib/supabase/client';
 import { Badge } from '@/components/ui/badge';
@@ -30,14 +31,28 @@ type UserRow = {
   created_at: string;
 };
 
-type ActiveTab = 'Team' | 'Billing';
+type PhoneNumberRow = {
+  id: string;
+  number: string;
+  is_active: boolean;
+  agent_id: string | null;
+  agents: { name: string } | { name: string }[] | null;
+};
+
+type ActiveTab = 'Team' | 'Billing' | 'Phone Numbers';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('Team');
   const [users, setUsers] = useState<UserRow[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
+  const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumberRow[]>([]);
+  const [phoneNumbersLoading, setPhoneNumbersLoading] = useState(true);
 
   const { data: meData, isLoading: meLoading } = trpc.auth.me.useQuery();
+
+  const createPortalSession = trpc.billing.createPortalSession.useMutation({
+    onSuccess: ({ url }) => { window.location.href = url; },
+  });
 
   useEffect(() => {
     async function fetchUsers() {
@@ -50,6 +65,20 @@ export default function SettingsPage() {
       setUsersLoading(false);
     }
     fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    async function fetchPhoneNumbers() {
+      setPhoneNumbersLoading(true);
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('phone_numbers')
+        .select('id, number, is_active, agent_id, agents(name)')
+        .order('number');
+      setPhoneNumbers((data as PhoneNumberRow[]) ?? []);
+      setPhoneNumbersLoading(false);
+    }
+    fetchPhoneNumbers();
   }, []);
 
   const plan = meData?.tenant?.plan ?? null;
@@ -77,7 +106,7 @@ export default function SettingsPage() {
 
       {/* Tab switcher */}
       <div className="flex gap-2 border-b pb-0 mb-6 mt-6">
-        {(['Team', 'Billing'] as ActiveTab[]).map((tab) => (
+        {(['Team', 'Billing', 'Phone Numbers'] as ActiveTab[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -153,6 +182,66 @@ export default function SettingsPage() {
         </div>
       )}
 
+      {/* Phone Numbers Tab */}
+      {activeTab === 'Phone Numbers' && (
+        <div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Phone Numbers</CardTitle>
+              <CardDescription>
+                Phone numbers assigned to your agents.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {phoneNumbersLoading ? (
+                <p className="text-sm text-muted-foreground">Loading...</p>
+              ) : phoneNumbers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No phone numbers assigned yet. Contact support to assign a number to your agent.
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Number</TableHead>
+                      <TableHead>Agent</TableHead>
+                      <TableHead>Active</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {phoneNumbers.map((pn) => {
+                      const agentName = Array.isArray(pn.agents)
+                        ? pn.agents[0]?.name
+                        : (pn.agents as { name: string } | null)?.name;
+                      return (
+                        <TableRow key={pn.id}>
+                          <TableCell className="font-mono">{pn.number}</TableCell>
+                          <TableCell>{agentName ?? '—'}</TableCell>
+                          <TableCell>
+                            {pn.is_active ? (
+                              <Badge className="bg-green-100 text-green-800 border-green-200 hover:bg-green-100">
+                                Active
+                              </Badge>
+                            ) : (
+                              <Badge
+                                variant="secondary"
+                                className="bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-100"
+                              >
+                                Inactive
+                              </Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Billing Tab */}
       {activeTab === 'Billing' && (
         <div className="space-y-4">
@@ -173,14 +262,14 @@ export default function SettingsPage() {
                       <p className="text-sm text-muted-foreground">Current plan</p>
                       <p className="text-lg font-semibold">{planDisplayName}</p>
                     </div>
-                    <div
-                      title="Coming soon — Stripe billing in Phase D"
-                      className="cursor-not-allowed"
+                    <Button
+                      variant="outline"
+                      onClick={() => createPortalSession.mutate()}
+                      disabled={createPortalSession.isPending || !meData?.tenant?.stripe_customer_id}
+                      title={!meData?.tenant?.stripe_customer_id ? 'No Stripe account connected' : undefined}
                     >
-                      <Button disabled variant="outline">
-                        Manage Billing
-                      </Button>
-                    </div>
+                      {createPortalSession.isPending ? 'Redirecting...' : 'Manage Billing'}
+                    </Button>
                   </div>
 
                   {planFeatures && (
@@ -243,6 +332,53 @@ export default function SettingsPage() {
           </Card>
         </div>
       )}
+
+      {/* Data & Privacy */}
+      <div className="mt-8 rounded-lg border border-destructive/30 bg-destructive/5 p-6">
+        <h2 className="font-semibold text-destructive">Data &amp; Privacy</h2>
+        <p className="mt-1 text-sm text-muted-foreground">Manage your data under GDPR.</p>
+        <div className="mt-4 flex gap-3">
+          <a
+            href={`${process.env.NEXT_PUBLIC_API_BASE_URL}/gdpr/export`}
+            className="inline-flex h-9 items-center rounded-md border border-input px-4 text-sm font-medium hover:bg-accent"
+            download
+          >
+            Export my data
+          </a>
+          <DataDeleteButton />
+        </div>
+      </div>
     </div>
+  );
+}
+
+function DataDeleteButton() {
+  const [confirming, setConfirming] = useState(false);
+  if (confirming) {
+    return (
+      <button onClick={async () => {
+        const session = await createBrowserClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        ).auth.getSession();
+        await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/gdpr/delete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.data.session?.access_token}`,
+          },
+          body: JSON.stringify({ confirmation: 'DELETE MY DATA' }),
+        });
+        window.location.href = '/sign-in';
+      }} className="inline-flex h-9 items-center rounded-md bg-destructive px-4 text-sm font-medium text-destructive-foreground hover:bg-destructive/90">
+        Confirm Delete Everything
+      </button>
+    );
+  }
+  return (
+    <button onClick={() => setConfirming(true)}
+      className="inline-flex h-9 items-center rounded-md border border-destructive px-4 text-sm font-medium text-destructive hover:bg-destructive/10">
+      Delete my data
+    </button>
   );
 }

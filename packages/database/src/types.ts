@@ -315,6 +315,7 @@ export type Database = {
           summary: string | null
           tenant_id: string
           transcript: string | null
+          twilio_call_sid: string | null
         }
         Insert: {
           agent_id: string
@@ -332,6 +333,7 @@ export type Database = {
           summary?: string | null
           tenant_id: string
           transcript?: string | null
+          twilio_call_sid?: string | null
         }
         Update: {
           agent_id?: string
@@ -349,6 +351,7 @@ export type Database = {
           summary?: string | null
           tenant_id?: string
           transcript?: string | null
+          twilio_call_sid?: string | null
         }
         Relationships: [
           {
@@ -556,6 +559,47 @@ export type Database = {
           },
         ]
       }
+      webhook_logs: {
+        Row: {
+          id: string
+          tenant_id: string | null
+          integration_type: string
+          event_type: string
+          payload: Json
+          status: string
+          error_message: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id?: string | null
+          integration_type: string
+          event_type: string
+          payload?: Json
+          status?: string
+          error_message?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string | null
+          integration_type?: string
+          event_type?: string
+          payload?: Json
+          status?: string
+          error_message?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -582,6 +626,15 @@ export type Database = {
       is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      increment_usage: {
+        Args: {
+          p_tenant_id: string
+          p_period_start: string
+          p_period_end: string
+          p_minutes: number
+        }
+        Returns: undefined
       }
     }
     Enums: {

@@ -1,6 +1,7 @@
 import { createServiceRoleClient } from '@voxori/database/client';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { ImpersonateButton } from '@/components/impersonate-button';
 
 export default async function AccountDetailPage({ params }: { params: { id: string } }) {
   const db = createServiceRoleClient();
@@ -95,6 +96,18 @@ export default async function AccountDetailPage({ params }: { params: { id: stri
             </tbody>
           </table>
         )}
+      </div>
+      {/* Admin Actions */}
+      <div className="rounded-lg border border-yellow-800 bg-yellow-900/20 p-6">
+        <h2 className="mb-2 font-semibold text-yellow-300">⚠ Admin Actions</h2>
+        <p className="mb-4 text-xs text-yellow-400">
+          Impersonation generates a one-time magic link. All actions are audit-logged.
+        </p>
+        <ImpersonateButton
+          tenantId={tenant.id}
+          apiBaseUrl={process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3002'}
+          adminSecret={process.env.NEXT_PUBLIC_ADMIN_API_SECRET ?? ''}
+        />
       </div>
     </div>
   );
