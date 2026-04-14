@@ -1,0 +1,22 @@
+{
+  "name": "@voxori/database",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./types": "./src/types.ts"
+  },
+  "scripts": {
+    "gen-types": "supabase gen types typescript --local > src/types.ts",
+    "gen-types:linked": "supabase gen types typescript --linked > src/types.ts"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
+    "@supabase/ssr": "^0.6.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "supabase": "^1.207.9"
+  }
+}

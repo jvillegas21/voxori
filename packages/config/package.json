@@ -1,0 +1,15 @@
+{
+  "name": "@voxori/config",
+  "version": "0.0.1",
+  "private": true,
+  "devDependencies": {
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  },
+  "exports": {
+    "./typescript": "./typescript/base.json",
+    "./typescript/nextjs": "./typescript/nextjs.json",
+    "./eslint/base": "./eslint/base.js",
+    "./tailwind": "./tailwind/index.ts"
+  }
+}
