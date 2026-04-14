@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        await db.from('calls').insert({
+        const { data: insertedCall } = await db.from('calls').insert({
           agent_id: agent.id,
           tenant_id: agent.tenant_id,
           caller_number: callerNumber,
@@ -127,12 +127,27 @@ export async function POST(request: NextRequest) {
           summary: artifact?.summary ?? null,
           started_at: startedAt,
           ended_at: endedAt,
-        });
+        }).select('id').single();
         console.log('[vapi] call-ended persisted', {
           ...context,
           tenantId: agent.tenant_id,
           agentId: agent.id,
         });
+
+        if (insertedCall && artifact?.recordingUrl) {
+          void fetch(`${process.env.API_BASE_URL}/recordings/migrate`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-voxori-internal-secret': process.env.INTERNAL_API_SECRET ?? '',
+            },
+            body: JSON.stringify({
+              callId:       insertedCall.id,
+              tenantId:     agent.tenant_id,
+              recordingUrl: artifact.recordingUrl,
+            }),
+          });
+        }
         break;
       }
 

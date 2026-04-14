@@ -1,7 +1,20 @@
 import { createTRPCReact } from '@trpc/react-query';
-import type { AnyRouter } from '@trpc/server';
+import { httpBatchLink } from '@trpc/client';
+import superjson from 'superjson';
+import type { AppRouter } from '@voxori/api';
 
-/** Replace with `import type { AppRouter } from '@voxori/api'` once the API router exists. */
-export type AppRouter = AnyRouter;
+export const trpc: ReturnType<typeof createTRPCReact<AppRouter>> = createTRPCReact<AppRouter>();
 
-export const trpc = createTRPCReact<AppRouter>();
+export function makeTrpcClient(accessToken: string | null) {
+  return trpc.createClient({
+    links: [
+      httpBatchLink({
+        url: `${process.env.NEXT_PUBLIC_API_BASE_URL}/trpc`,
+        headers: accessToken
+          ? { Authorization: `Bearer ${accessToken}` }
+          : {},
+        transformer: superjson,
+      }),
+    ],
+  });
+}

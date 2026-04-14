@@ -419,6 +419,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      bootstrap_new_tenant: {
+        Args: {
+          p_user_id: string
+          p_email: string
+          p_full_name: string | null
+          p_tenant_name: string
+          p_subdomain: string
+        }
+        Returns: Json
+      }
       is_super_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
