@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import twilio from 'twilio';
 import { verifyToolSecret } from '../_auth';
 
 interface SendConfirmationParams {
@@ -10,14 +11,23 @@ export async function POST(request: NextRequest) {
   const auth = await verifyToolSecret(request);
   if (auth instanceof NextResponse) return auth;
 
-  const params = await request.json() as SendConfirmationParams;
+  const body = await request.json() as SendConfirmationParams;
+  const { to_phone, message } = body;
 
-  // Phase 1: Send SMS via Twilio.
-  // Twilio SDK install + implementation happens when calendar booking is live.
-  console.log('[tool] send-confirmation called', { agentId: auth.agentId, to: params.to_phone });
+  const twilioClient = twilio(
+    process.env.TWILIO_ACCOUNT_SID,
+    process.env.TWILIO_AUTH_TOKEN,
+  );
 
-  return NextResponse.json({
-    sent: false,
-    message: 'SMS confirmation will be sent manually.',
-  });
+  try {
+    await twilioClient.messages.create({
+      body: message,
+      from: process.env.TWILIO_PHONE_NUMBER!,
+      to: to_phone,
+    });
+
+    return NextResponse.json({ success: true, message: 'Confirmation sent.' });
+  } catch {
+    return NextResponse.json({ success: false, message: 'Failed to send confirmation.' });
+  }
 }

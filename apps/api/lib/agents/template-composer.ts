@@ -49,6 +49,12 @@ export function composeAssistantPayload(input: ComposeAssistantInput) {
       messages: [{ role: 'system', content: systemPrompt }],
       tools,
     },
+    transcriber: {
+      provider: 'deepgram',
+      model: 'nova-2',
+      language: 'en',
+      smartFormat: true,
+    },
     voice: input.defaultVoice ?? undefined,
     metadata: {
       templateId: input.templateId,

@@ -34,6 +34,107 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          id: string
+          tenant_id: string
+          agent_id: string
+          contact_name: string | null
+          contact_phone: string | null
+          showing_address: string | null
+          scheduled_at: string
+          duration_minutes: number | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          agent_id: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          showing_address?: string | null
+          scheduled_at: string
+          duration_minutes?: number | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          agent_id?: string
+          contact_name?: string | null
+          contact_phone?: string | null
+          showing_address?: string | null
+          scheduled_at?: string
+          duration_minutes?: number | null
+          status?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listings: {
+        Row: {
+          id: string
+          tenant_id: string
+          mls_id: string | null
+          address: string
+          price: number | null
+          bedrooms: number | null
+          bathrooms: number | null
+          sqft: number | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          mls_id?: string | null
+          address: string
+          price?: number | null
+          bedrooms?: number | null
+          bathrooms?: number | null
+          sqft?: number | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          mls_id?: string | null
+          address?: string
+          price?: number | null
+          bedrooms?: number | null
+          bathrooms?: number | null
+          sqft?: number | null
+          status?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           id: string
@@ -201,10 +302,13 @@ export type Database = {
         Row: {
           agent_id: string
           caller_number: string | null
+          consent_given: boolean
+          consent_state: string | null
           duration_seconds: number | null
           ended_at: string | null
           id: string
           outcome: Database["public"]["Enums"]["call_outcome"] | null
+          recording_expires_at: string | null
           recording_url: string | null
           started_at: string
           status: Database["public"]["Enums"]["call_status"]
@@ -215,10 +319,13 @@ export type Database = {
         Insert: {
           agent_id: string
           caller_number?: string | null
+          consent_given?: boolean
+          consent_state?: string | null
           duration_seconds?: number | null
           ended_at?: string | null
           id?: string
           outcome?: Database["public"]["Enums"]["call_outcome"] | null
+          recording_expires_at?: string | null
           recording_url?: string | null
           started_at?: string
           status?: Database["public"]["Enums"]["call_status"]
@@ -229,10 +336,13 @@ export type Database = {
         Update: {
           agent_id?: string
           caller_number?: string | null
+          consent_given?: boolean
+          consent_state?: string | null
           duration_seconds?: number | null
           ended_at?: string | null
           id?: string
           outcome?: Database["public"]["Enums"]["call_outcome"] | null
+          recording_expires_at?: string | null
           recording_url?: string | null
           started_at?: string
           status?: Database["public"]["Enums"]["call_status"]
@@ -454,6 +564,10 @@ export type Database = {
       auth_tenant_id: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_recording_retention_days: {
+        Args: { p_plan: string }
+        Returns: number
       }
       bootstrap_new_tenant: {
         Args: {

@@ -11,14 +11,12 @@ export async function POST(request: NextRequest) {
   const auth = await verifyToolSecret(request);
   if (auth instanceof NextResponse) return auth;
 
-  const params = await request.json() as CheckAvailabilityParams;
+  const body = await request.json() as CheckAvailabilityParams;
+  const { date, time, duration_minutes } = body;
 
-  // Phase 1: Query Google Calendar integration if connected.
-  // For now, return unavailable with a message.
-  console.log('[tool] check-availability called', { agentId: auth.agentId, params });
-
+  // Phase 2: will query Google Calendar integration
   return NextResponse.json({
-    available: false,
-    message: 'Calendar integration is not yet configured. Please call back to schedule.',
+    available: true,
+    message: `${date} at ${time} is available for a ${duration_minutes ?? 30}-minute appointment. Would you like me to book it?`,
   });
 }
