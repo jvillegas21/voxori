@@ -1,36 +1,41 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
+import { TrpcProvider } from '@/lib/trpc-provider';
+import { NavSidebar } from '@/components/nav-sidebar';
 
-// In Phase 1, this layout will check Supabase session and redirect to /sign-in if unauthenticated.
-// For the scaffold, we render the layout structure.
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll() {
+          // Read-only in RSC — session refresh handled by middleware
+        },
+      },
+    }
+  );
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    redirect('/sign-in');
+  }
+
   return (
-    <div className="flex min-h-screen">
-      <nav className="w-64 border-r bg-gray-50 p-4">
-        <div className="mb-8">
-          <span className="text-xl font-bold text-brand-700">Voxori</span>
-        </div>
-        <ul className="space-y-1">
-          {[
-            { href: '/', label: 'Dashboard' },
-            { href: '/agent', label: 'My Agent' },
-            { href: '/calls', label: 'Call Log' },
-            { href: '/schedule', label: 'Schedule' },
-            { href: '/integrations', label: 'Integrations' },
-            { href: '/analytics', label: 'Analytics' },
-            { href: '/settings', label: 'Settings' },
-          ].map((item) => (
-            <li key={item.href}>
-              <a
-                href={item.href}
-                className="block rounded px-3 py-2 text-sm hover:bg-gray-100"
-              >
-                {item.label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <main className="flex-1 p-8">{children}</main>
-    </div>
+    <TrpcProvider accessToken={session.access_token}>
+      <div className="flex min-h-screen bg-background">
+        <NavSidebar userEmail={session.user.email ?? ''} />
+        <main className="flex-1 overflow-y-auto p-8">{children}</main>
+      </div>
+    </TrpcProvider>
   );
 }
