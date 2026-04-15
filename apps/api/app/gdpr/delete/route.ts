@@ -49,10 +49,15 @@ export async function POST(request: NextRequest) {
   const supabaseAdminUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
   for (const u of tenantUsers ?? []) {
-    await fetch(`${supabaseAdminUrl}/auth/v1/admin/users/${u.id}`, {
-      method: 'DELETE',
-      headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}` },
-    });
+    try {
+      await fetch(`${supabaseAdminUrl}/auth/v1/admin/users/${u.id}`, {
+        method: 'DELETE',
+        headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}` },
+      });
+    } catch (err) {
+      console.error(`[gdpr/delete] failed to delete auth user ${u.id}:`, err);
+      // Continue — don't stop the whole operation for one user
+    }
   }
 
   return NextResponse.json({ deleted: true, tenantId });

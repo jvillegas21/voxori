@@ -44,7 +44,8 @@ function getCallLogContext(body: VapiCallEvent) {
 export async function POST(request: NextRequest) {
   // Verify webhook secret
   const secret = request.headers.get('x-vapi-secret');
-  if (secret !== process.env.VAPI_WEBHOOK_SECRET) {
+  const configuredSecret = process.env.VAPI_WEBHOOK_SECRET;
+  if (!configuredSecret || secret !== configuredSecret) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

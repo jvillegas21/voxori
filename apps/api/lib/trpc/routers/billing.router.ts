@@ -3,9 +3,20 @@ import { createServiceRoleClient } from '@voxori/database/client';
 import Stripe from 'stripe';
 import { TRPCError } from '@trpc/server';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-03-25.dahlia',
-});
+// Lazy init: only create Stripe client when first needed so missing
+// STRIPE_SECRET_KEY doesn't crash the server or test runner on import.
+let _stripe: Stripe | null = null;
+function getStripe(): Stripe {
+  if (!_stripe) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Stripe is not configured.' });
+    }
+    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2026-03-25.dahlia' as any,
+    });
+  }
+  return _stripe;
+}
 
 export const billingRouter = router({
   getUsageSummary: tenantProcedure.query(async ({ ctx }) => {
@@ -41,9 +52,9 @@ export const billingRouter = router({
       throw new TRPCError({ code: 'BAD_REQUEST', message: 'No Stripe customer found. Contact support.' });
     }
 
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await getStripe().billingPortal.sessions.create({
       customer: tenant.stripe_customer_id,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/settings`,
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/settings`,
     });
 
     return { url: session.url };

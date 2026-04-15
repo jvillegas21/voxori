@@ -70,10 +70,12 @@ export default function ListingsPage() {
   const [filter, setFilter] = useState<FilterValue>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  const supabase = createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  const [error, setError] = useState<string | null>(null);
+  const [supabase] = useState(() =>
+    createBrowserClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
   );
 
   useEffect(() => {
@@ -86,11 +88,18 @@ export default function ListingsPage() {
 
     if (filter) query = query.eq('status', filter);
 
-    query.then(({ data }) => {
-      setListings(data ?? []);
-      setIsLoading(false);
-    });
-  }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
+    void (async () => {
+      try {
+        const { data } = await query;
+        setListings(data ?? []);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load listings.');
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [filter, supabase]);
 
   const hasListings = listings.length > 0;
 
@@ -100,6 +109,7 @@ export default function ListingsPage() {
       <p className="mt-2 text-gray-500">
         View and manage your synced MLS/IDX property listings.
       </p>
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
 
       {/* Filter tabs */}
       <div className="mt-6 flex gap-1 rounded-lg border bg-white p-1 w-fit">

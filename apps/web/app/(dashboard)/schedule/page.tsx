@@ -74,13 +74,15 @@ export default function SchedulePage() {
   const [upcoming, setUpcoming] = useState<Booking[] | null>(null);
   const [past, setPast] = useState<Booking[] | null>(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const supabase = createBrowserClient<Database>(
+  const [error, setError] = useState<string | null>(null);
+  const [supabase] = useState(() =>
+    createBrowserClient<Database>(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    )
+  );
 
+  useEffect(() => {
     async function fetchBookings() {
       const now = new Date().toISOString();
 
@@ -105,8 +107,11 @@ export default function SchedulePage() {
       setLoading(false);
     }
 
-    fetchBookings();
-  }, []);
+    fetchBookings().catch(err => {
+      console.error(err);
+      setError('Failed to load schedule data.');
+    });
+  }, [supabase]);
 
   return (
     <div className="space-y-8">
@@ -115,6 +120,7 @@ export default function SchedulePage() {
         <p className="mt-2 text-gray-500">
           View upcoming and past showings booked by your agent.
         </p>
+        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </div>
 
       {/* Upcoming Bookings */}

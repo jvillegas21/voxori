@@ -17,6 +17,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing tenantId or actorUserId' }, { status: 400 });
   }
 
+  // Extract the real acting admin user from Bearer JWT
+  const authHeader = request.headers.get('authorization');
+  const token = authHeader?.replace('Bearer ', '').trim() ?? null;
+  let realActorUserId: string = actorUserId; // fallback to client-provided
+
+  if (token) {
+    try {
+      const payload = JSON.parse(Buffer.from(token.split('.')[1]!, 'base64').toString());
+      if (payload.sub) realActorUserId = payload.sub as string;
+    } catch { /* use fallback */ }
+  }
+
   const db = createServiceRoleClient();
 
   // Find the client_admin user for this tenant
@@ -55,7 +67,7 @@ export async function POST(request: NextRequest) {
 
   // Audit log the impersonation
   await db.from('audit_log').insert({
-    actor_user_id: actorUserId,
+    actor_user_id: realActorUserId,
     actor_role:    'super_admin',
     action:        'tenant.impersonate',
     resource_type: 'tenant',

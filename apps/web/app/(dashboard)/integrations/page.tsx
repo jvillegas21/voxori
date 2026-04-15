@@ -98,17 +98,16 @@ export default function IntegrationsPage() {
   const [connected, setConnected] = useState<ConnectedIntegration[] | null>(null);
   const [logs, setLogs] = useState<WebhookLog[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [supabase] = useState(() => createClient());
 
   useEffect(() => {
-    const supabase = createClient();
-
     async function fetchData() {
       const [integrationsResult, logsResult] = await Promise.all([
         supabase
           .from('integrations')
           .select('type, is_active, last_synced_at, config'),
-        // webhook_logs is not in generated types yet, cast via any
-        (supabase as any)
+        supabase
           .from('webhook_logs')
           .select('id, integration_type, event_type, status, created_at, error_message')
           .order('created_at', { ascending: false })
@@ -120,8 +119,11 @@ export default function IntegrationsPage() {
       setLoading(false);
     }
 
-    fetchData();
-  }, []);
+    fetchData().catch(err => {
+      console.error(err);
+      setError('Failed to load integrations data.');
+    });
+  }, [supabase]);
 
   return (
     <div>
@@ -129,6 +131,7 @@ export default function IntegrationsPage() {
       <p className="mt-2 text-gray-500">
         Connect Voxori to your calendar, MLS, and CRM tools.
       </p>
+      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
 
       {/* Integration Cards Grid */}
       <div className="mt-6 grid gap-4 sm:grid-cols-2">

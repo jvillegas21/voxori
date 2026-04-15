@@ -14,9 +14,16 @@ export async function POST(request: NextRequest) {
   const body = await request.json() as SendConfirmationParams;
   const { to_phone, message } = body;
 
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
+    return NextResponse.json({
+      success: false,
+      message: 'SMS confirmation is not configured on this server.',
+    });
+  }
+
   const twilioClient = twilio(
-    process.env.TWILIO_ACCOUNT_SID,
-    process.env.TWILIO_AUTH_TOKEN,
+    process.env.TWILIO_ACCOUNT_SID!,
+    process.env.TWILIO_AUTH_TOKEN!,
   );
 
   try {

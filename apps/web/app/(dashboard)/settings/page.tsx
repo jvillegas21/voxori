@@ -47,6 +47,7 @@ export default function SettingsPage() {
   const [usersLoading, setUsersLoading] = useState(true);
   const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumberRow[]>([]);
   const [phoneNumbersLoading, setPhoneNumbersLoading] = useState(true);
+  const [supabase] = useState(() => createClient());
 
   const { data: meData, isLoading: meLoading } = trpc.auth.me.useQuery();
 
@@ -57,7 +58,6 @@ export default function SettingsPage() {
   useEffect(() => {
     async function fetchUsers() {
       setUsersLoading(true);
-      const supabase = createClient();
       const { data } = await supabase
         .from('users')
         .select('id, email, full_name, role, created_at');
@@ -65,12 +65,11 @@ export default function SettingsPage() {
       setUsersLoading(false);
     }
     fetchUsers();
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     async function fetchPhoneNumbers() {
       setPhoneNumbersLoading(true);
-      const supabase = createClient();
       const { data } = await supabase
         .from('phone_numbers')
         .select('id, number, is_active, agent_id, agents(name)')
@@ -79,7 +78,7 @@ export default function SettingsPage() {
       setPhoneNumbersLoading(false);
     }
     fetchPhoneNumbers();
-  }, []);
+  }, [supabase]);
 
   const plan = meData?.tenant?.plan ?? null;
   const planFeatures = plan && PLAN_TIERS[plan] ? PLAN_TIERS[plan] : null;
@@ -354,25 +353,41 @@ export default function SettingsPage() {
 
 function DataDeleteButton() {
   const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function handleDelete() {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const { data: { session } } = await createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      ).auth.getSession();
+      if (!session?.access_token) { setDeleteError('Not authenticated.'); return; }
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/gdpr/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ confirmation: 'DELETE MY DATA' }),
+      });
+      if (!res.ok) { setDeleteError('Deletion failed. Please try again.'); return; }
+      window.location.href = '/sign-in';
+    } catch { setDeleteError('An unexpected error occurred.'); }
+    finally { setDeleting(false); }
+  }
+
   if (confirming) {
     return (
-      <button onClick={async () => {
-        const session = await createBrowserClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        ).auth.getSession();
-        await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/gdpr/delete`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.data.session?.access_token}`,
-          },
-          body: JSON.stringify({ confirmation: 'DELETE MY DATA' }),
-        });
-        window.location.href = '/sign-in';
-      }} className="inline-flex h-9 items-center rounded-md bg-destructive px-4 text-sm font-medium text-destructive-foreground hover:bg-destructive/90">
-        Confirm Delete Everything
-      </button>
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          className="inline-flex h-9 items-center rounded-md bg-destructive px-4 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {deleting ? 'Deleting...' : 'Confirm Delete Everything'}
+        </button>
+        {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
+      </div>
     );
   }
   return (
