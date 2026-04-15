@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceRoleClient } from '@voxori/database/client';
 
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, x-voxori-admin-secret, Authorization',
+    },
+  });
+}
+
 export async function POST(request: NextRequest) {
   // Verify admin secret
   const secret = request.headers.get('x-voxori-admin-secret');
@@ -47,14 +58,14 @@ export async function POST(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-  const res = await fetch(`${supabaseUrl}/auth/v1/admin/users/${targetUser.id}/generate-link`, {
+  const res = await fetch(`${supabaseUrl}/auth/v1/admin/generate_link`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'apikey': serviceKey,
       'Authorization': `Bearer ${serviceKey}`,
     },
-    body: JSON.stringify({ type: 'magiclink' }),
+    body: JSON.stringify({ type: 'magiclink', email: targetUser.email }),
   });
 
   if (!res.ok) {
