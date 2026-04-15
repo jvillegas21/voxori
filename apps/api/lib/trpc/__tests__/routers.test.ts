@@ -316,3 +316,6 @@ describe('calls.get', () => {
     expect(result).toEqual(mockCall);
   });
 });
+
+// ─── impersonate endpoint smoke test ──────────────────────────────────────────
+import { describe as describeImp, it as itImp, expect as expectImp } from 'vitest';
