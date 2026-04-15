@@ -1,6 +1,6 @@
 -- Reusable, curated agent templates for tenant provisioning
 CREATE TABLE agent_templates (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
   vertical text NOT NULL,
   description text NOT NULL,

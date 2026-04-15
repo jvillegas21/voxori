@@ -11,7 +11,7 @@ CREATE TYPE booking_status AS ENUM (
 );
 
 CREATE TABLE bookings (
-  id               uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id        uuid NOT NULL REFERENCES tenants(id)  ON DELETE CASCADE,
   agent_id         uuid NOT NULL REFERENCES agents(id)   ON DELETE CASCADE,
   call_id          uuid REFERENCES calls(id)             ON DELETE SET NULL,
@@ -35,7 +35,7 @@ CREATE POLICY "bookings_isolation" ON bookings
 -- listings: MLS property cache populated by realtor integrations
 -- ================================================================
 CREATE TABLE listings (
-  id             uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id      uuid NOT NULL REFERENCES tenants(id)       ON DELETE CASCADE,
   integration_id uuid NOT NULL REFERENCES integrations(id)  ON DELETE CASCADE,
   mls_id         text NOT NULL,
@@ -61,7 +61,7 @@ CREATE POLICY "listings_isolation" ON listings
 -- webhook_logs: inbound webhook audit trail for integration debugging
 -- ================================================================
 CREATE TABLE webhook_logs (
-  id               uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id               uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id        uuid REFERENCES tenants(id) ON DELETE SET NULL,
   integration_type text NOT NULL,    -- 'vapi' | 'stripe' | 'twilio'
   event_type       text NOT NULL,
@@ -83,7 +83,7 @@ CREATE POLICY "webhook_logs_isolation" ON webhook_logs
 -- Captures admin actions, impersonation, plan changes, etc.
 -- ================================================================
 CREATE TABLE audit_log (
-  id            uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   actor_user_id uuid,          -- NULL for system/service-role actions
   actor_role    text,
   action        text NOT NULL,  -- e.g. 'agent.update', 'tenant.impersonate'
@@ -110,7 +110,7 @@ CREATE POLICY "audit_log_insert" ON audit_log
 -- notification_prefs: per-user notification settings
 -- ================================================================
 CREATE TABLE notification_prefs (
-  id                  uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id             uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   tenant_id           uuid NOT NULL REFERENCES tenants(id)    ON DELETE CASCADE,
   missed_call_email   boolean NOT NULL DEFAULT true,
