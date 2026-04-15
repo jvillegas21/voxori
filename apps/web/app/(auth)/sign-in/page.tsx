@@ -23,7 +23,7 @@ export default function SignInPage() {
     setLoading(true);
 
     try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -31,6 +31,21 @@ export default function SignInPage() {
       if (signInError) {
         setError(signInError.message);
         return;
+      }
+
+      // Bootstrap recovery: if the user confirmed email before bootstrap ran,
+      // their tenant/user records won't exist yet. The bootstrap endpoint is
+      // idempotent — safe to call on every sign-in.
+      if (data.session) {
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/bootstrap`,
+          {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${data.session.access_token}` },
+          }
+        ).catch(() => {
+          // Non-fatal — bootstrap may have already run
+        });
       }
 
       router.push('/');
