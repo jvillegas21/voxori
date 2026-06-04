@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { router, tenantProcedure } from '../init';
 import { createServiceRoleClient } from '@voxori/database/client';
-import type { Database } from '@voxori/database/types';
+import type { Database, Json } from '@voxori/database/types';
 
 type AgentUpdate = Database['public']['Tables']['agents']['Update'];
 
@@ -39,11 +39,14 @@ export const agentsRouter = router({
       z.object({
         id:   z.string().uuid(),
         data: z.object({
-          name:         z.string().min(1).optional(),
-          voiceId:      z.string().optional(),
-          systemPrompt: z.string().optional(),
-          llmModel:     z.string().optional(),
-          isActive:     z.boolean().optional(),
+          name:           z.string().min(1).optional(),
+          voiceId:        z.string().optional(),
+          voicePreset:    z.string().optional(),
+          greeting:       z.string().optional(),
+          disclosureText: z.string().optional(),
+          systemPrompt:   z.string().optional(),
+          llmModel:       z.string().optional(),
+          isActive:       z.boolean().optional(),
         }),
       })
     )
@@ -55,6 +58,29 @@ export const agentsRouter = router({
       if (input.data.systemPrompt !== undefined) payload.system_prompt = input.data.systemPrompt;
       if (input.data.llmModel     !== undefined) payload.llm_model     = input.data.llmModel;
       if (input.data.isActive     !== undefined) payload.is_active     = input.data.isActive;
+
+      const configFields = ['voicePreset', 'greeting', 'disclosureText'] as const;
+      const hasConfigUpdate = configFields.some((field) => input.data[field] !== undefined);
+
+      if (hasConfigUpdate) {
+        const { data: existing } = await db
+          .from('agents')
+          .select('config')
+          .eq('id', input.id)
+          .eq('tenant_id', ctx.tenantId)
+          .single();
+
+        const currentConfig = (existing?.config ?? {}) as Record<string, unknown>;
+        const nextConfig = { ...currentConfig };
+
+        if (input.data.voicePreset !== undefined) nextConfig.voice_preset = input.data.voicePreset;
+        if (input.data.greeting !== undefined) nextConfig.greeting = input.data.greeting;
+        if (input.data.disclosureText !== undefined) {
+          nextConfig.disclosure_text = input.data.disclosureText;
+        }
+
+        payload.config = nextConfig as Json;
+      }
 
       if (Object.keys(payload).length === 0) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'No fields to update' });
@@ -71,6 +97,18 @@ export const agentsRouter = router({
       if (error || !data) {
         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: error?.message ?? 'Update failed' });
       }
+
+      if (input.data.greeting || input.data.disclosureText || input.data.voicePreset) {
+        await db.from('onboarding_steps').upsert(
+          {
+            tenant_id: ctx.tenantId,
+            step: 'agent',
+            completed_at: new Date().toISOString(),
+          },
+          { onConflict: 'tenant_id,step' }
+        );
+      }
+
       return data;
     }),
 });

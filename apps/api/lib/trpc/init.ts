@@ -26,3 +26,19 @@ export const adminProcedure = t.procedure.use(({ ctx, next }) => {
   }
   return next({ ctx: { ...ctx, user: ctx.user } });
 });
+
+export const clientAdminProcedure = t.procedure.use(({ ctx, next }) => {
+  if (!ctx.user || !ctx.tenantId) {
+    throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Authentication required' });
+  }
+  if (ctx.role !== 'client_admin' && ctx.role !== 'super_admin') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Workspace admin access required' });
+  }
+  return next({
+    ctx: {
+      ...ctx,
+      user: ctx.user,
+      tenantId: ctx.tenantId,
+    },
+  });
+});

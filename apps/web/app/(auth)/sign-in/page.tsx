@@ -36,7 +36,14 @@ export default function SignInPage() {
       // Bootstrap recovery: if the user confirmed email before bootstrap ran,
       // their tenant/user records won't exist yet. The bootstrap endpoint is
       // idempotent — safe to call on every sign-in.
-      if (data.session) {
+      const nextPath =
+        typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('next')
+          : null;
+      const destination =
+        nextPath?.startsWith('/') && !nextPath.startsWith('//') ? nextPath : '/';
+
+      if (data.session && !destination.startsWith('/invite/accept')) {
         await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/bootstrap`,
           {
@@ -48,7 +55,7 @@ export default function SignInPage() {
         });
       }
 
-      router.push('/');
+      router.push(destination);
       router.refresh();
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');

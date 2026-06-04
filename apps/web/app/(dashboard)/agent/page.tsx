@@ -9,9 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CheckCircle2, AlertCircle, Bot } from 'lucide-react';
-
-const LLM_MODELS = ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'] as const;
-type LlmModel = (typeof LLM_MODELS)[number];
+import { LLM_MODEL_OPTIONS, type LlmModelId } from '@voxori/shared/constants';
+const VOICE_PRESETS = [
+  { id: 'warm-female', label: 'Warm — Female' },
+  { id: 'professional-male', label: 'Professional — Male' },
+  { id: 'friendly-neutral', label: 'Friendly — Neutral' },
+] as const;
+type LlmModel = LlmModelId;
 
 type SaveStatus = 'idle' | 'saving' | 'saved';
 
@@ -32,6 +36,9 @@ export default function AgentPage() {
   const [name, setName] = useState('');
   const [isActive, setIsActive] = useState(false);
   const [llmModel, setLlmModel] = useState<LlmModel>('gpt-4o');
+  const [greeting, setGreeting] = useState('');
+  const [disclosureText, setDisclosureText] = useState('');
+  const [voicePreset, setVoicePreset] = useState<string>(VOICE_PRESETS[0].id);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
 
   useEffect(() => {
@@ -39,6 +46,10 @@ export default function AgentPage() {
       setName(agent.name);
       setIsActive(agent.is_active);
       setLlmModel((agent.llm_model as LlmModel) ?? 'gpt-4o');
+      const config = (agent.config ?? {}) as Record<string, string>;
+      setGreeting(config.greeting ?? '');
+      setDisclosureText(config.disclosure_text ?? '');
+      setVoicePreset(config.voice_preset ?? VOICE_PRESETS[0].id);
     }
   }, [agent]);
 
@@ -52,6 +63,9 @@ export default function AgentPage() {
           name,
           isActive,
           llmModel,
+          greeting,
+          disclosureText,
+          voicePreset,
         },
       });
       setSaveStatus('saved');
@@ -156,6 +170,57 @@ export default function AgentPage() {
           </CardContent>
         </Card>
 
+        {/* Voice & compliance */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Voice & compliance</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="voice-preset">Voice preset</Label>
+              <select
+                id="voice-preset"
+                value={voicePreset}
+                onChange={(e) => setVoicePreset(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                {VOICE_PRESETS.map((preset) => (
+                  <option key={preset.id} value={preset.id}>
+                    {preset.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Vapi voice mapping will apply when telephony is fully wired.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="greeting">Greeting</Label>
+              <textarea
+                id="greeting"
+                value={greeting}
+                onChange={(e) => setGreeting(e.target.value)}
+                rows={3}
+                placeholder="Hi, thanks for calling. I'm the AI assistant for..."
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="disclosure">Compliance disclosure</Label>
+              <textarea
+                id="disclosure"
+                value={disclosureText}
+                onChange={(e) => setDisclosureText(e.target.value)}
+                rows={3}
+                placeholder="This call may be recorded for quality assurance..."
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Voice Model */}
         <Card>
           <CardHeader>
@@ -170,9 +235,9 @@ export default function AgentPage() {
                 onChange={(e) => setLlmModel(e.target.value as LlmModel)}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
-                {LLM_MODELS.map((model) => (
-                  <option key={model} value={model}>
-                    {model}
+                {LLM_MODEL_OPTIONS.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.label}
                   </option>
                 ))}
               </select>

@@ -1,3 +1,8 @@
+import {
+  buildVapiHttpTools,
+  resolveApiBaseUrl,
+} from './voxori-tool-definitions';
+
 interface ComposeAssistantInput {
   templateName: string;
   templateDescription: string;
@@ -9,6 +14,8 @@ interface ComposeAssistantInput {
   tenantId: string;
   agentName: string;
   businessProfile: Record<string, unknown>;
+  toolSecret: string;
+  apiBaseUrl?: string;
 }
 
 function formatBusinessContext(businessProfile: Record<string, unknown>): string {
@@ -22,23 +29,14 @@ function formatBusinessContext(businessProfile: Record<string, unknown>): string
 }
 
 export function composeAssistantPayload(input: ComposeAssistantInput) {
+  const apiBaseUrl = input.apiBaseUrl ?? resolveApiBaseUrl();
   const systemPrompt = [
     input.lockedPromptCore.trim(),
     formatBusinessContext(input.businessProfile),
     '\nIf information is missing, ask concise follow-up questions before taking action.',
   ].join('\n');
 
-  const tools = input.defaultTools.map((toolName) => ({
-    type: 'function',
-    function: {
-      name: toolName,
-      description: `Execute ${toolName} workflow.`,
-      parameters: {
-        type: 'object',
-        additionalProperties: true,
-      },
-    },
-  }));
+  const tools = buildVapiHttpTools(input.defaultTools, apiBaseUrl, input.toolSecret);
 
   return {
     name: input.agentName,

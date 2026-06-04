@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     (await db.from('calls').select('id').eq('tenant_id', tenantId)).data?.map(c => c.id) ?? []
   );
   await db.from('bookings').delete().eq('tenant_id', tenantId);
+  await db.from('leads').delete().eq('tenant_id', tenantId);
   await db.from('calls').delete().eq('tenant_id', tenantId);
   await db.from('listings').delete().eq('tenant_id', tenantId);
   await db.from('integrations').delete().eq('tenant_id', tenantId);

@@ -4,28 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { cn } from '@/lib/utils';
-import {
-  LayoutDashboard,
-  Bot,
-  Phone,
-  Calendar,
-  Building2,
-  Puzzle,
-  BarChart3,
-  Settings,
-  LogOut,
-} from 'lucide-react';
-
-const NAV_ITEMS = [
-  { href: '/',             label: 'Dashboard',    icon: LayoutDashboard },
-  { href: '/agent',        label: 'My Agent',     icon: Bot },
-  { href: '/calls',        label: 'Calls',        icon: Phone },
-  { href: '/schedule',     label: 'Schedule',     icon: Calendar },
-  { href: '/listings',     label: 'Listings',     icon: Building2 },
-  { href: '/integrations', label: 'Integrations', icon: Puzzle },
-  { href: '/analytics',    label: 'Analytics',    icon: BarChart3 },
-  { href: '/settings',     label: 'Settings',     icon: Settings },
-];
+import { WEB_NAV_ITEMS } from '@/lib/routes';
+import { LogOut } from 'lucide-react';
 
 export function NavSidebar({ userEmail }: { userEmail: string }) {
   const pathname = usePathname();
@@ -45,11 +25,11 @@ export function NavSidebar({ userEmail }: { userEmail: string }) {
   return (
     <nav className="flex w-64 flex-col border-r bg-card">
       <div className="flex h-16 items-center border-b px-6">
-        <span className="text-xl font-bold text-brand-700">Voxori</span>
+        <span className="font-heading text-xl font-semibold text-primary">Voxori</span>
       </div>
 
       <ul className="flex-1 space-y-1 overflow-y-auto p-3">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        {WEB_NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive =
             href === '/' ? pathname === '/' : pathname.startsWith(href);
           return (
@@ -57,9 +37,9 @@ export function NavSidebar({ userEmail }: { userEmail: string }) {
               <Link
                 href={href}
                 className={cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                  'flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-interactive duration-200',
                   isActive
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                 )}
               >
@@ -77,7 +57,7 @@ export function NavSidebar({ userEmail }: { userEmail: string }) {
         </div>
         <button
           onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+          className="flex w-full cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-accent-foreground"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           Sign out

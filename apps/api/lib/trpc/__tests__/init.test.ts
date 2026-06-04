@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { TRPCError } from '@trpc/server';
-import { tenantProcedure, adminProcedure } from '../init';
+import { tenantProcedure, adminProcedure, clientAdminProcedure } from '../init';
 
 // Helper to invoke the last middleware of a procedure
 async function callMiddleware(procedure: any, ctx: Record<string, unknown>) {
@@ -73,6 +73,29 @@ describe('adminProcedure guard', () => {
       user: { id: 'admin-1' },
       tenantId: null,
       role: 'super_admin',
+      supabase: {},
+    });
+    expect(called).toBe(true);
+  });
+});
+
+describe('clientAdminProcedure guard', () => {
+  it('throws FORBIDDEN when role is team_member', async () => {
+    await expect(
+      callMiddleware(clientAdminProcedure, {
+        user: { id: '1' },
+        tenantId: 'tenant-1',
+        role: 'team_member',
+        supabase: {},
+      })
+    ).rejects.toThrow(TRPCError);
+  });
+
+  it('calls next() when role is client_admin', async () => {
+    const called = await callMiddleware(clientAdminProcedure, {
+      user: { id: '1' },
+      tenantId: 'tenant-1',
+      role: 'client_admin',
       supabase: {},
     });
     expect(called).toBe(true);

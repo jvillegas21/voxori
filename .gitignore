@@ -1,10 +1,24 @@
 # Dependencies
 node_modules/
 
-# Environment variables
+# Environment variables (never commit secrets)
 .env
 .env.local
 .env.*.local
+**/.env.local
+apps/*/.env.local
+apps/**/.env.local
+
+# Credentials & keys
+*.pem
+*.key
+credentials.json
+*-credentials.json
+service-account*.json
+**/serviceAccount*.json
+
+# Claude Code local settings (may contain API keys in allow rules)
+.claude/settings.local.json
 
 # Build artifacts
 dist/
@@ -22,10 +36,15 @@ build/
 
 # Testing
 coverage/
+playwright-report/
+test-results/
+blob-report/
 
 # Vercel
 .vercel
 
-# Supabase
+# Supabase CLI local state (may include pooler URLs / project refs)
 supabase/.branches
 supabase/.temp
+**/supabase/.temp/
+packages/database/supabase/.temp/

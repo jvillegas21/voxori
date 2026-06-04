@@ -40,7 +40,17 @@ export const createAgentSchema = z.object({
   name: z.string().min(1).max(100),
   voiceId: z.string().optional(),
   systemPrompt: z.string().optional(),
-  llmModel: z.enum(['gpt-4o', 'claude-3-5-sonnet']).optional().default('gpt-4o'),
+  llmModel: z
+    .enum([
+      'gpt-4o',
+      'gpt-4o-mini',
+      'gpt-4-turbo',
+      'claude-3-5-sonnet',
+      'claude-3-5-haiku',
+      'claude-3-opus',
+    ])
+    .optional()
+    .default('gpt-4o'),
   config: agentConfigSchema.optional(),
 });
 

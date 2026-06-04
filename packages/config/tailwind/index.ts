@@ -5,16 +5,17 @@ export const baseConfig: Partial<Config> = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
+        sans: ['Josefin Sans', 'system-ui', 'sans-serif'],
+        heading: ['Cinzel', 'Georgia', 'serif'],
       },
       colors: {
         brand: {
-          50: "#f0f4ff",
-          100: "#e0e9ff",
-          500: "#3b5bdb",
-          600: "#2f4ac7",
-          700: "#2540b3",
-          900: "#1a2d7a",
+          50: '#f0fdfa',
+          100: '#ccfbf1',
+          500: '#14b8a6',
+          600: '#0f766e',
+          700: '#0d9488',
+          900: '#134e4a',
         },
       },
     },

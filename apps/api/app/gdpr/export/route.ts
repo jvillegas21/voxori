@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
     { data: agentsData },
     { data: callsData },
     { data: bookingsData },
+    { data: leadsData },
     { data: integrationsData },
     { data: usageData },
   ] = await Promise.all([
@@ -34,6 +35,7 @@ export async function GET(request: NextRequest) {
     db.from('agents').select('id, name, is_active, llm_model, created_at').eq('tenant_id', tenantId),
     db.from('calls').select('id, caller_number, duration_seconds, status, outcome, started_at, ended_at, summary').eq('tenant_id', tenantId),
     db.from('bookings').select('id, contact_name, contact_phone, showing_address, scheduled_at, status, created_at').eq('tenant_id', tenantId),
+    db.from('leads').select('id, name, phone, email, status, crm_sync_state, area_of_interest, timeline, created_at').eq('tenant_id', tenantId),
     db.from('integrations').select('id, type, is_active, last_synced_at').eq('tenant_id', tenantId),
     db.from('usage_records').select('period_start, period_end, minutes_used').eq('tenant_id', tenantId),
   ]);
@@ -45,6 +47,7 @@ export async function GET(request: NextRequest) {
     agents: agentsData ?? [],
     calls: callsData ?? [],
     bookings: bookingsData ?? [],
+    leads: leadsData ?? [],
     integrations: integrationsData ?? [],
     usageRecords: usageData ?? [],
   };

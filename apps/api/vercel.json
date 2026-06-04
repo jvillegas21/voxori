@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/cron/mls-sync",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/cron/crm-retry",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/cron/post-call-sms",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

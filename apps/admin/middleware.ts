@@ -1,11 +1,12 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
-
-const PUBLIC_ROUTES = ['/sign-in'];
+import { ADMIN_PUBLIC_ROUTES } from '@/lib/public-routes';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = new URL(request.url);
-  const isPublicRoute = PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`));
+  const isPublicRoute = ADMIN_PUBLIC_ROUTES.some(
+    (r) => pathname === r || pathname.startsWith(`${r}/`)
+  );
 
   // Build mutable response so @supabase/ssr can refresh cookies
   let response = NextResponse.next({ request });

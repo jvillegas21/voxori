@@ -181,6 +181,57 @@ function ToolEventRow({ event }: { event: ToolEvent }) {
   );
 }
 
+// ---------- workflow timeline ----------
+
+const TOOL_LABELS: Record<string, string> = {
+  search_listings: 'Search listings',
+  'search-listings': 'Search listings',
+  log_lead: 'Capture lead',
+  'log-lead': 'Capture lead',
+  book_showing: 'Book showing',
+  'book-showing': 'Book showing',
+  check_availability: 'Check availability',
+  'check-availability': 'Check availability',
+  send_confirmation: 'Send confirmation',
+  'send-confirmation': 'Send confirmation',
+};
+
+function labelForTool(name: string): string {
+  return TOOL_LABELS[name] ?? name.replace(/[-_]/g, ' ');
+}
+
+function WorkflowTimeline({ events }: { events: ToolEvent[] }) {
+  if (events.length === 0) return null;
+
+  const sorted = [...events].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Call workflow</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ol className="relative space-y-0 border-l border-border pl-6">
+          {sorted.map((event, index) => (
+            <li key={event.id} className="relative pb-6 last:pb-0">
+              <span className="absolute -left-[1.35rem] top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                {index + 1}
+              </span>
+              <p className="text-sm font-medium">{labelForTool(event.tool_name)}</p>
+              <p className="text-xs text-muted-foreground">
+                {formatDateTime(event.created_at)}
+                {event.duration_ms != null ? ` · ${event.duration_ms}ms` : ''}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ---------- main page ----------
 
 export default function CallDetailPage() {
@@ -289,7 +340,10 @@ export default function CallDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Tool events */}
+      {/* Workflow timeline */}
+      <WorkflowTimeline events={toolEvents} />
+
+      {/* Tool events (detail) */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Tool Events</CardTitle>

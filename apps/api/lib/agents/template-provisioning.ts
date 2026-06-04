@@ -1,5 +1,6 @@
 import { createServiceRoleClient } from '@voxori/database/client';
 import { composeAssistantPayload } from './template-composer';
+import { ensureToolSecret } from './tool-secret';
 import { parseBusinessProfile } from './template-validation';
 import { createVapiAssistant, listVapiAssistants, updateVapiAssistant } from '../vapi/client';
 
@@ -69,6 +70,7 @@ export async function createAgentFromTemplate(params: {
   const template = await getTemplateOrThrow(params.templateId);
   const editableSchema = normalizeFieldSchema(template.editable_fields_schema);
   const businessProfile = parseBusinessProfile(params.businessProfile, editableSchema);
+  const toolSecret = ensureToolSecret({});
   const payload = composeAssistantPayload({
     templateName: template.name,
     templateDescription: template.description,
@@ -80,6 +82,7 @@ export async function createAgentFromTemplate(params: {
     tenantId: params.tenantId,
     agentName: params.name,
     businessProfile,
+    toolSecret,
   });
 
   const assistant = await createVapiAssistant(payload);
@@ -88,6 +91,7 @@ export async function createAgentFromTemplate(params: {
     template_version: template.version,
     business_profile: businessProfile,
     vapi_assistant_id: assistant.id,
+    tool_secret: toolSecret,
   };
 
   const { data: agent, error } = await db
@@ -127,6 +131,7 @@ export async function updateAgentFromTemplate(params: {
   const template = await getTemplateOrThrow(templateId);
   const editableSchema = normalizeFieldSchema(template.editable_fields_schema);
   const businessProfile = parseBusinessProfile(params.businessProfile, editableSchema);
+  const toolSecret = ensureToolSecret(config);
   const payload = composeAssistantPayload({
     templateName: template.name,
     templateDescription: template.description,
@@ -138,6 +143,7 @@ export async function updateAgentFromTemplate(params: {
     tenantId: params.tenantId,
     agentName: agent.name,
     businessProfile,
+    toolSecret,
   });
 
   const assistantId = config.vapi_assistant_id;
@@ -149,6 +155,7 @@ export async function updateAgentFromTemplate(params: {
     template_id: template.id,
     template_version: template.version,
     business_profile: businessProfile,
+    tool_secret: toolSecret,
   };
 
   const { data: updated, error: updateError } = await db

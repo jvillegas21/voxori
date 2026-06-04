@@ -35,7 +35,15 @@ echo "Local Supabase is up. Summary:"
 pnpm exec supabase status
 
 echo ""
+echo "Syncing local Supabase keys into apps/*/.env.local..."
+bash "$ROOT/scripts/sync-local-supabase-env.sh"
+
+echo ""
 echo "Next steps:"
-echo "  1. Copy API URL and anon key from above into apps/web, apps/admin, and apps/api .env.local"
-echo "  2. Set SUPABASE_SERVICE_ROLE_KEY from 'supabase status' (service_role secret) for server/API routes"
-echo "  3. Regenerate TypeScript DB types: pnpm --filter @voxori/database run gen-types"
+echo "  1. Apply migrations (if not already): pnpm db:reset"
+echo "  2. Seed sample Austin leads/listings: pnpm db:seed"
+echo "  3. Regenerate TypeScript DB types: pnpm db:types"
+echo "  4. Start apps: pnpm dev"
+echo ""
+echo "Re-sync keys anytime: pnpm db:sync-env"
+echo "Preview without writing: pnpm db:sync-env --print-only"

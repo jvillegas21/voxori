@@ -4,15 +4,8 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { cn } from '@/lib/utils';
-import { Users, Bot, Phone, CreditCard, Settings, LogOut, LayoutDashboard } from 'lucide-react';
-
-const NAV_ITEMS = [
-  { href: '/accounts', label: 'Accounts',  icon: Users },
-  { href: '/agents',   label: 'Agents',    icon: Bot },
-  { href: '/calls',    label: 'Calls',     icon: Phone },
-  { href: '/billing',  label: 'Billing',   icon: CreditCard },
-  { href: '/settings', label: 'Settings',  icon: Settings },
-];
+import { ADMIN_NAV_ITEMS } from '@/lib/routes';
+import { LogOut } from 'lucide-react';
 
 export function AdminNavSidebar({ userEmail }: { userEmail: string }) {
   const pathname = usePathname();
@@ -37,7 +30,7 @@ export function AdminNavSidebar({ userEmail }: { userEmail: string }) {
       </div>
 
       <ul className="flex-1 space-y-1 overflow-y-auto p-3">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        {ADMIN_NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive = pathname.startsWith(href);
           return (
             <li key={href}>

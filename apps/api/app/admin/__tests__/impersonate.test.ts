@@ -79,7 +79,7 @@ describe('POST /admin/impersonate', () => {
     });
 
     const res = await POST(makeRequest({ tenantId: 'tenant-1', actorUserId: 'admin-1' }));
-    const body = await res.json();
+    const body = (await res.json()) as { actionLink?: string; targetEmail?: string };
 
     // THE KEY ASSERTION: must use /admin/generate_link, not /admin/users/{id}/generate-link
     expect(mockFetch).toHaveBeenCalledWith(

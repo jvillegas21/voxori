@@ -47,3 +47,47 @@ export async function updateVapiAssistant(assistantId: string, payload: Record<s
 export async function listVapiAssistants() {
   return vapiRequest<VapiAssistant[]>('/assistant');
 }
+
+export interface VapiPhoneNumber {
+  id: string;
+  number?: string;
+  provider?: string;
+  assistantId?: string;
+}
+
+export interface ImportTwilioPhoneNumberInput {
+  number: string;
+  assistantId: string;
+  name?: string;
+  twilioAccountSid: string;
+  twilioAuthToken?: string;
+  twilioApiKey?: string;
+  twilioApiSecret?: string;
+  smsEnabled?: boolean;
+}
+
+/** Import a Twilio-owned number into Vapi and link it to an assistant. */
+export async function importTwilioPhoneNumber(input: ImportTwilioPhoneNumberInput) {
+  const body: Record<string, unknown> = {
+    provider: 'twilio',
+    number: input.number,
+    assistantId: input.assistantId,
+    twilioAccountSid: input.twilioAccountSid,
+    smsEnabled: input.smsEnabled ?? true,
+  };
+
+  if (input.name) body.name = input.name;
+  if (input.twilioApiKey && input.twilioApiSecret) {
+    body.twilioApiKey = input.twilioApiKey;
+    body.twilioApiSecret = input.twilioApiSecret;
+  } else if (input.twilioAuthToken) {
+    body.twilioAuthToken = input.twilioAuthToken;
+  } else {
+    throw new Error('Twilio credentials required: API key + secret or auth token');
+  }
+
+  return vapiRequest<VapiPhoneNumber>('/phone-number', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}

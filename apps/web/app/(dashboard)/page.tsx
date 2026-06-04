@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import {
@@ -65,46 +67,102 @@ function outcomeLabel(outcome: string | null | undefined): string {
 // ─── onboarding checklist ───────────────────────────────────────────────────
 
 function OnboardingState() {
-  const steps = [
-    { label: 'Account created', done: true, href: null },
-    { label: 'Create your first agent', done: false, href: '/agent' },
-    { label: 'Assign a phone number', done: false, href: '/settings' },
-    { label: 'Receive your first call', done: false, href: null },
-  ];
+  const { data, isLoading } = trpc.onboarding.getProgress.useQuery();
+
+  if (isLoading) {
+    return <Skeleton className="mt-8 h-48 w-full max-w-lg" />;
+  }
+
+  const steps = data?.steps ?? [];
 
   return (
-    <Card className="mt-8 max-w-lg">
+    <Card className="mt-8 max-w-lg card-lift">
       <CardHeader>
         <CardTitle className="text-xl">Welcome to Voxori</CardTitle>
-        <p className="text-sm text-muted-foreground">Complete these steps to get started:</p>
+        <p className="text-sm text-muted-foreground">
+          {data
+            ? `${data.completedCount} of ${data.totalSteps} setup steps complete`
+            : 'Complete these steps to get started:'}
+        </p>
       </CardHeader>
       <CardContent>
         <ul className="space-y-3">
           {steps.map((step) => (
-            <li key={step.label} className="flex items-center gap-3">
-              {step.done ? (
+            <li key={step.id} className="flex items-center gap-3">
+              {step.completed ? (
                 <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
               ) : (
                 <Circle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
               )}
-              {step.href ? (
-                <Link
-                  href={step.href}
-                  className="flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-                >
-                  {step.label}
-                  <ArrowRight className="h-3 w-3" />
-                </Link>
-              ) : (
-                <span className={`text-sm ${step.done ? 'font-medium' : 'text-muted-foreground'}`}>
-                  {step.label}
-                </span>
-              )}
+              <Link
+                href={step.href}
+                className={`flex items-center gap-1 text-sm ${
+                  step.completed ? 'text-muted-foreground' : 'font-medium text-primary hover:underline'
+                }`}
+              >
+                {step.label}
+                {!step.completed && <ArrowRight className="h-3 w-3" />}
+              </Link>
             </li>
           ))}
         </ul>
+        {data && !data.isComplete && (
+          <Button className="mt-4 cursor-pointer" asChild>
+            <Link href="/onboarding">Continue setup</Link>
+          </Button>
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+function ActiveCallBanner() {
+  const { data: activeCall } = trpc.calls.getActive.useQuery(undefined, {
+    refetchInterval: 5000,
+  });
+  const [elapsed, setElapsed] = useState('');
+
+  useEffect(() => {
+    if (!activeCall?.started_at) return;
+
+    function tick() {
+      if (!activeCall?.started_at) return;
+      const seconds = Math.floor(
+        (Date.now() - new Date(activeCall.started_at).getTime()) / 1000
+      );
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      setElapsed(`${m}:${s.toString().padStart(2, '0')}`);
+    }
+
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [activeCall?.started_at]);
+
+  if (!activeCall) return null;
+
+  return (
+    <div
+      className="mt-6 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="flex items-center gap-3">
+        <span className="relative flex h-3 w-3">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+          <span className="relative inline-flex h-3 w-3 rounded-full bg-green-500" />
+        </span>
+        <div>
+          <p className="font-semibold text-green-900">Agent on call</p>
+          <p className="text-sm text-green-800">
+            {activeCall.caller_number ?? 'Unknown caller'}
+            {elapsed ? ` · ${elapsed}` : ''}
+          </p>
+        </div>
+      </div>
+      <Badge className="bg-green-600 text-white hover:bg-green-600">Live</Badge>
+    </div>
   );
 }
 
@@ -144,7 +202,7 @@ function RecentCallsTable({ calls }: { calls: Call[] }) {
           </thead>
           <tbody className="divide-y divide-border bg-card">
             {calls.map((call) => (
-              <tr key={call.id} className="hover:bg-muted/30 transition-colors">
+              <tr key={call.id} className="cursor-pointer transition-colors duration-200 hover:bg-muted/30">
                 <td className="px-4 py-3 text-muted-foreground">
                   {call.started_at
                     ? formatDistanceToNow(new Date(call.started_at), { addSuffix: true })
@@ -195,7 +253,7 @@ function KpiCard({
   loading: boolean;
 }) {
   return (
-    <Card>
+    <Card className="card-lift transition-interactive">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
         <span className="text-muted-foreground">{icon}</span>
@@ -214,24 +272,25 @@ function KpiCard({
 // ─── page ────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
-  const { data: calls, isLoading } = trpc.calls.list.useQuery({ limit: 5 });
+  const { data: calls, isLoading: callsLoading } = trpc.calls.list.useQuery({ limit: 5 });
+  const { data: summary, isLoading: summaryLoading } = trpc.analytics.getSummary.useQuery({
+    days: 30,
+  });
+  const { data: onboarding } = trpc.onboarding.getProgress.useQuery();
 
-  const totalCalls = calls?.length ?? 0;
-  const missedCalls = calls?.filter((c) => c.status === 'missed').length ?? 0;
-  const showingsBooked = calls?.filter((c) => c.outcome === 'scheduled').length ?? 0;
-  const avgDuration = (() => {
-    if (!calls || calls.length === 0) return '0m 0s';
-    const withDuration = calls.filter((c) => c.duration_seconds != null);
-    if (withDuration.length === 0) return '0m 0s';
-    const avg = withDuration.reduce((sum, c) => sum + (c.duration_seconds ?? 0), 0) / withDuration.length;
-    return formatDuration(Math.round(avg));
-  })();
+  const kpiLoading = summaryLoading;
+  const totalCalls = summary?.totalCalls ?? 0;
+  const missedCalls = summary?.missedCalls ?? 0;
+  const showingsBooked = summary?.showingsBooked ?? 0;
+  const avgDuration = summary
+    ? formatDuration(summary.avgDurationSeconds)
+    : '0m 0s';
 
   const kpis = [
-    { title: 'Total Calls',     value: totalCalls,     icon: <Phone className="h-4 w-4" /> },
-    { title: 'Missed Calls',    value: missedCalls,    icon: <AlertCircle className="h-4 w-4" /> },
+    { title: 'Total Calls (30d)', value: totalCalls, icon: <Phone className="h-4 w-4" /> },
+    { title: 'Missed Calls', value: missedCalls, icon: <AlertCircle className="h-4 w-4" /> },
     { title: 'Showings Booked', value: showingsBooked, icon: <Calendar className="h-4 w-4" /> },
-    { title: 'Avg Duration',    value: avgDuration,    icon: <Clock className="h-4 w-4" /> },
+    { title: 'Avg Duration', value: avgDuration, icon: <Clock className="h-4 w-4" /> },
   ];
 
   return (
@@ -239,16 +298,20 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold">Dashboard</h1>
       <p className="mt-1 text-muted-foreground">Your call activity at a glance.</p>
 
+      <ActiveCallBanner />
+
       {/* KPI row */}
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {kpis.map((kpi) => (
-          <KpiCard key={kpi.title} {...kpi} loading={isLoading} />
+          <KpiCard key={kpi.title} {...kpi} loading={kpiLoading} />
         ))}
       </div>
 
       {/* Body — onboarding or recent calls */}
-      {!isLoading && calls !== undefined && (
-        calls.length === 0 ? (
+      {!callsLoading && calls !== undefined && (
+        onboarding && !onboarding.isComplete ? (
+          <OnboardingState />
+        ) : calls.length === 0 ? (
           <OnboardingState />
         ) : (
           <RecentCallsTable calls={calls} />

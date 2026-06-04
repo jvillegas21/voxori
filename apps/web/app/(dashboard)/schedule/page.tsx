@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Database } from '@voxori/database/types';
 
@@ -233,13 +235,9 @@ export default function SchedulePage() {
           <p className="mt-1 text-sm text-muted-foreground">
             Connect your Google Calendar to sync showings and check availability automatically.
           </p>
-          <button
-            disabled
-            className="mt-4 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground opacity-50 cursor-not-allowed"
-            title="Coming in Phase 2"
-          >
-            Connect Google Calendar
-          </button>
+          <Button className="mt-4 cursor-pointer min-h-[44px]" asChild>
+            <Link href="/integrations">Connect Google Calendar</Link>
+          </Button>
         </div>
       </section>
     </div>

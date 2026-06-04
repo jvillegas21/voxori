@@ -4,7 +4,7 @@ import { router, tenantProcedure } from '../init';
 import { createServiceRoleClient } from '@voxori/database/client';
 
 const callFiltersInput = z.object({
-  status:    z.enum(['completed', 'missed', 'failed']).optional(),
+  status:    z.enum(['completed', 'missed', 'failed', 'in_progress']).optional(),
   outcome:   z.enum(['scheduled', 'callback_requested', 'unqualified', 'info_only']).optional(),
   agentId:   z.string().uuid().optional(),
   startDate: z.string().optional(),
@@ -53,4 +53,20 @@ export const callsRouter = router({
       if (error || !data) throw new TRPCError({ code: 'NOT_FOUND', message: 'Call not found' });
       return data;
     }),
+
+  getActive: tenantProcedure.query(async ({ ctx }) => {
+    const db = createServiceRoleClient();
+    const { data, error } = await db
+      .from('calls')
+      .select('id, agent_id, caller_number, status, started_at, ended_at')
+      .eq('tenant_id', ctx.tenantId)
+      .eq('status', 'in_progress')
+      .is('ended_at', null)
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: error.message });
+    return data ?? null;
+  }),
 });

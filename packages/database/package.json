@@ -11,12 +11,17 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:status": "supabase status",
-    "gen-types": "supabase gen types typescript --local > src/types.ts",
-    "gen-types:linked": "supabase gen types typescript --linked > src/types.ts"
+    "db:reset": "supabase db reset --local",
+    "db:migrate": "supabase migration up --local",
+    "db:push": "supabase db push",
+    "gen-types": "supabase gen types typescript --local 2>/dev/null > src/types.ts",
+    "gen-types:linked": "supabase gen types typescript --linked 2>/dev/null > src/types.ts",
+    "supabase:link": "bash ../../scripts/supabase-link-remote.sh"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
-    "@supabase/ssr": "^0.6.1"
+    "@supabase/ssr": "^0.6.1",
+    "@voxori/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20",

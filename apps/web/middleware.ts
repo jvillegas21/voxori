@@ -1,13 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
-
-const PUBLIC_ROUTES = [
-  '/sign-in',
-  '/sign-up',
-  '/forgot-password',
-  '/reset-password',
-  '/auth/callback',
-];
+import { PUBLIC_ROUTES } from '@/lib/public-routes';
 
 export async function middleware(request: NextRequest) {
   const { pathname, hostname } = new URL(request.url);
@@ -46,6 +39,15 @@ export async function middleware(request: NextRequest) {
 
   // getUser() validates the JWT and refreshes the session if needed
   const { data: { user } } = await supabase.auth.getUser();
+
+  // Marketing routing: `/landing` is canonical for visitors; `/` is the agent dashboard
+  if (!user && pathname === '/') {
+    return NextResponse.redirect(new URL('/landing', request.url));
+  }
+
+  if (user && pathname === '/landing') {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
 
   const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
 

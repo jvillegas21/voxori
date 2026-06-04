@@ -34,143 +34,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      bookings: {
-        Row: {
-          id: string
-          tenant_id: string
-          agent_id: string
-          contact_name: string | null
-          contact_phone: string | null
-          showing_address: string | null
-          scheduled_at: string
-          duration_minutes: number | null
-          status: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          tenant_id: string
-          agent_id: string
-          contact_name?: string | null
-          contact_phone?: string | null
-          showing_address?: string | null
-          scheduled_at: string
-          duration_minutes?: number | null
-          status?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          tenant_id?: string
-          agent_id?: string
-          contact_name?: string | null
-          contact_phone?: string | null
-          showing_address?: string | null
-          scheduled_at?: string
-          duration_minutes?: number | null
-          status?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_agent_id_fkey"
-            columns: ["agent_id"]
-            isOneToOne: false
-            referencedRelation: "agents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      listings: {
-        Row: {
-          id: string
-          tenant_id: string
-          mls_id: string | null
-          address: string
-          price: number | null
-          bedrooms: number | null
-          bathrooms: number | null
-          sqft: number | null
-          status: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          tenant_id: string
-          mls_id?: string | null
-          address: string
-          price?: number | null
-          bedrooms?: number | null
-          bathrooms?: number | null
-          sqft?: number | null
-          status?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          tenant_id?: string
-          mls_id?: string | null
-          address?: string
-          price?: number | null
-          bedrooms?: number | null
-          bathrooms?: number | null
-          sqft?: number | null
-          status?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "listings_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      audit_log: {
-        Row: {
-          id: string
-          actor_user_id: string | null
-          actor_role: string | null
-          action: string
-          resource_type: string
-          resource_id: string | null
-          tenant_id: string | null
-          metadata: Json | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          actor_user_id?: string | null
-          actor_role?: string | null
-          action: string
-          resource_type: string
-          resource_id?: string | null
-          tenant_id?: string | null
-          metadata?: Json | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          actor_user_id?: string | null
-          actor_role?: string | null
-          action?: string
-          resource_type?: string
-          resource_id?: string | null
-          tenant_id?: string | null
-          metadata?: Json | null
-          created_at?: string
-        }
-        Relationships: []
-      }
       agent_templates: {
         Row: {
           created_at: string
@@ -260,14 +123,121 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          action: string
+          actor_role: string | null
+          actor_user_id: string | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          resource_id: string | null
+          resource_type: string
+          tenant_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          tenant_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_role?: string | null
+          actor_user_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bookings: {
+        Row: {
+          agent_id: string
+          call_id: string | null
+          contact_name: string
+          contact_phone: string
+          created_at: string
+          id: string
+          scheduled_at: string
+          showing_address: string
+          status: Database["public"]["Enums"]["booking_status"]
+          tenant_id: string
+        }
+        Insert: {
+          agent_id: string
+          call_id?: string | null
+          contact_name: string
+          contact_phone: string
+          created_at?: string
+          id?: string
+          scheduled_at: string
+          showing_address: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          tenant_id: string
+        }
+        Update: {
+          agent_id?: string
+          call_id?: string | null
+          contact_name?: string
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          scheduled_at?: string
+          showing_address?: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       call_tool_events: {
         Row: {
           call_id: string
           created_at: string
           duration_ms: number | null
           id: string
+          idempotency_key: string | null
           input: Json | null
           output: Json | null
+          status: string | null
           tool_name: string
         }
         Insert: {
@@ -275,8 +245,10 @@ export type Database = {
           created_at?: string
           duration_ms?: number | null
           id?: string
+          idempotency_key?: string | null
           input?: Json | null
           output?: Json | null
+          status?: string | null
           tool_name: string
         }
         Update: {
@@ -284,8 +256,10 @@ export type Database = {
           created_at?: string
           duration_ms?: number | null
           id?: string
+          idempotency_key?: string | null
           input?: Json | null
           output?: Json | null
+          status?: string | null
           tool_name?: string
         }
         Relationships: [
@@ -316,6 +290,7 @@ export type Database = {
           tenant_id: string
           transcript: string | null
           twilio_call_sid: string | null
+          vapi_call_id: string | null
         }
         Insert: {
           agent_id: string
@@ -334,6 +309,7 @@ export type Database = {
           tenant_id: string
           transcript?: string | null
           twilio_call_sid?: string | null
+          vapi_call_id?: string | null
         }
         Update: {
           agent_id?: string
@@ -352,6 +328,7 @@ export type Database = {
           tenant_id?: string
           transcript?: string | null
           twilio_call_sid?: string | null
+          vapi_call_id?: string | null
         }
         Relationships: [
           {
@@ -377,6 +354,7 @@ export type Database = {
           id: string
           is_active: boolean
           last_synced_at: string | null
+          market_id: string | null
           tenant_id: string
           type: Database["public"]["Enums"]["integration_type"]
         }
@@ -386,6 +364,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_synced_at?: string | null
+          market_id?: string | null
           tenant_id: string
           type: Database["public"]["Enums"]["integration_type"]
         }
@@ -395,6 +374,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_synced_at?: string | null
+          market_id?: string | null
           tenant_id?: string
           type?: Database["public"]["Enums"]["integration_type"]
         }
@@ -408,30 +388,260 @@ export type Database = {
           },
         ]
       }
+      leads: {
+        Row: {
+          agent_id: string | null
+          area_of_interest: string | null
+          baths: number | null
+          beds: number | null
+          budget_max: number | null
+          budget_min: number | null
+          call_id: string | null
+          created_at: string
+          crm_external_id: string | null
+          crm_sync_state: Database["public"]["Enums"]["crm_sync_state"]
+          email: string | null
+          financing_status: string | null
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          tenant_id: string
+          timeline: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          area_of_interest?: string | null
+          baths?: number | null
+          beds?: number | null
+          budget_max?: number | null
+          budget_min?: number | null
+          call_id?: string | null
+          created_at?: string
+          crm_external_id?: string | null
+          crm_sync_state?: Database["public"]["Enums"]["crm_sync_state"]
+          email?: string | null
+          financing_status?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          tenant_id: string
+          timeline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          area_of_interest?: string | null
+          baths?: number | null
+          beds?: number | null
+          budget_max?: number | null
+          budget_min?: number | null
+          call_id?: string | null
+          created_at?: string
+          crm_external_id?: string | null
+          crm_sync_state?: Database["public"]["Enums"]["crm_sync_state"]
+          email?: string | null
+          financing_status?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          tenant_id?: string
+          timeline?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listings: {
+        Row: {
+          address: string
+          bathrooms: number | null
+          bedrooms: number | null
+          id: string
+          integration_id: string
+          mls_id: string
+          originating_system_name: string
+          price: number | null
+          raw_data: Json | null
+          sqft: number | null
+          status: string
+          synced_at: string
+          tenant_id: string
+        }
+        Insert: {
+          address: string
+          bathrooms?: number | null
+          bedrooms?: number | null
+          id?: string
+          integration_id: string
+          mls_id: string
+          originating_system_name?: string
+          price?: number | null
+          raw_data?: Json | null
+          sqft?: number | null
+          status?: string
+          synced_at?: string
+          tenant_id: string
+        }
+        Update: {
+          address?: string
+          bathrooms?: number | null
+          bedrooms?: number | null
+          id?: string
+          integration_id?: string
+          mls_id?: string
+          originating_system_name?: string
+          price?: number | null
+          raw_data?: Json | null
+          sqft?: number | null
+          status?: string
+          synced_at?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listings_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_prefs: {
+        Row: {
+          daily_digest_email: boolean
+          id: string
+          missed_call_email: boolean
+          tenant_id: string
+          updated_at: string
+          user_id: string
+          weekly_report_email: boolean
+        }
+        Insert: {
+          daily_digest_email?: boolean
+          id?: string
+          missed_call_email?: boolean
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+          weekly_report_email?: boolean
+        }
+        Update: {
+          daily_digest_email?: boolean
+          id?: string
+          missed_call_email?: boolean
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+          weekly_report_email?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_prefs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_steps: {
+        Row: {
+          completed_at: string
+          id: string
+          step: string
+          tenant_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          step: string
+          tenant_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          step?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_steps_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       phone_numbers: {
         Row: {
           agent_id: string
+          created_at: string
           id: string
           is_active: boolean
           number: string
           tenant_id: string
           twilio_sid: string | null
+          vapi_phone_id: string | null
+          vapi_sync_error: string | null
         }
         Insert: {
           agent_id: string
+          created_at?: string
           id?: string
           is_active?: boolean
           number: string
           tenant_id: string
           twilio_sid?: string | null
+          vapi_phone_id?: string | null
+          vapi_sync_error?: string | null
         }
         Update: {
           agent_id?: string
+          created_at?: string
           id?: string
           is_active?: boolean
           number?: string
           tenant_id?: string
           twilio_sid?: string | null
+          vapi_phone_id?: string | null
+          vapi_sync_error?: string | null
         }
         Relationships: [
           {
@@ -450,12 +660,73 @@ export type Database = {
           },
         ]
       }
+      sms_outbox: {
+        Row: {
+          body: string
+          call_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          idempotency_key: string
+          sent_at: string | null
+          sms_type: string
+          status: string
+          tenant_id: string
+          to_phone: string
+          twilio_sid: string | null
+        }
+        Insert: {
+          body: string
+          call_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key: string
+          sent_at?: string | null
+          sms_type: string
+          status?: string
+          tenant_id: string
+          to_phone: string
+          twilio_sid?: string | null
+        }
+        Update: {
+          body?: string
+          call_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string
+          sent_at?: string | null
+          sms_type?: string
+          status?: string
+          tenant_id?: string
+          to_phone?: string
+          twilio_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_outbox_call_id_fkey"
+            columns: ["call_id"]
+            isOneToOne: false
+            referencedRelation: "calls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_outbox_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           branding: Json | null
           created_at: string
           id: string
           name: string
+          parent_tenant_id: string | null
           plan: Database["public"]["Enums"]["plan_tier"]
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -466,6 +737,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          parent_tenant_id?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -476,12 +748,21 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          parent_tenant_id?: string | null
           plan?: Database["public"]["Enums"]["plan_tier"]
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subdomain?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tenants_parent_tenant_id_fkey"
+            columns: ["parent_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usage_records: {
         Row: {
@@ -559,36 +840,114 @@ export type Database = {
           },
         ]
       }
-      webhook_logs: {
+      waitlist_entries: {
         Row: {
-          id: string
-          tenant_id: string | null
-          integration_type: string
-          event_type: string
-          payload: Json
-          status: string
-          error_message: string | null
           created_at: string
+          email: string
+          id: string
+          metadata: Json | null
+          source: string
         }
         Insert: {
-          id?: string
-          tenant_id?: string | null
-          integration_type: string
-          event_type: string
-          payload?: Json
-          status?: string
-          error_message?: string | null
           created_at?: string
+          email: string
+          id?: string
+          metadata?: Json | null
+          source?: string
         }
         Update: {
+          created_at?: string
+          email?: string
           id?: string
-          tenant_id?: string | null
-          integration_type?: string
-          event_type?: string
+          metadata?: Json | null
+          source?: string
+        }
+        Relationships: []
+      }
+      tenant_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["user_role"]
+          status: Database["public"]["Enums"]["invitation_status"]
+          tenant_id: string
+          token_hash: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by: string
+          role?: Database["public"]["Enums"]["user_role"]
+          status?: Database["public"]["Enums"]["invitation_status"]
+          tenant_id: string
+          token_hash: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          status?: Database["public"]["Enums"]["invitation_status"]
+          tenant_id?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_invitations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_type: string
+          id: string
+          integration_type: string
+          payload: Json
+          status: string
+          tenant_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_type: string
+          id?: string
+          integration_type: string
           payload?: Json
           status?: string
-          error_message?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
           created_at?: string
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          integration_type?: string
+          payload?: Json
+          status?: string
+          tenant_id?: string | null
         }
         Relationships: [
           {
@@ -609,23 +968,21 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
-      get_recording_retention_days: {
-        Args: { p_plan: string }
-        Returns: number
-      }
       bootstrap_new_tenant: {
         Args: {
           p_user_id: string
           p_email: string
-          p_full_name: string | null
+          p_full_name: string
           p_tenant_name: string
           p_subdomain: string
         }
         Returns: Json
       }
-      is_super_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
+      get_recording_retention_days: {
+        Args: {
+          p_plan: string
+        }
+        Returns: number
       }
       increment_usage: {
         Args: {
@@ -636,14 +993,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
+      booking_status: "pending" | "confirmed" | "cancelled" | "completed"
       call_outcome:
         | "scheduled"
         | "callback_requested"
         | "unqualified"
         | "info_only"
-      call_status: "completed" | "missed" | "failed"
+      call_status: "completed" | "missed" | "failed" | "in_progress"
+      crm_sync_state: "pending" | "synced" | "failed" | "skipped"
       integration_type:
         | "google_calendar"
         | "mls_idx"
@@ -651,6 +1014,14 @@ export type Database = {
         | "calendly"
         | "outlook"
         | "acuity"
+      lead_status:
+        | "new"
+        | "contacted"
+        | "qualified"
+        | "nurturing"
+        | "converted"
+        | "lost"
+      invitation_status: "pending" | "accepted" | "revoked" | "expired"
       plan_tier: "starter" | "professional" | "growth" | "agency"
       user_role: "super_admin" | "client_admin" | "team_member"
     }

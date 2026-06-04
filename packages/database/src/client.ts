@@ -1,8 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
+import {
+  getSupabaseAnonKey,
+  getSupabasePublicUrl,
+  getSupabaseServiceRoleKey,
+} from '@voxori/shared/env/supabase';
 import type { Database } from './types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = getSupabasePublicUrl();
+const supabaseAnonKey = getSupabaseAnonKey();
 
 // Browser client — use in React components and client-side code
 export function createBrowserClient() {
@@ -11,7 +16,7 @@ export function createBrowserClient() {
 
 // Server client using service role — use in API routes and server actions only
 export function createServiceRoleClient() {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const serviceRoleKey = getSupabaseServiceRoleKey();
   return createClient<Database>(supabaseUrl, serviceRoleKey, {
     auth: {
       autoRefreshToken: false,

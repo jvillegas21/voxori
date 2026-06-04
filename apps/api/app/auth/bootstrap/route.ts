@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
   const { data: result, error: rpcError } = await db.rpc('bootstrap_new_tenant', {
     p_user_id:     user.id,
     p_email:       email,
-    p_full_name:   fullName,
+    p_full_name:   fullName ?? '',
     p_tenant_name: companyName,
     p_subdomain:   subdomain,
   });

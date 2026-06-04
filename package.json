@@ -7,16 +7,29 @@
   },
   "scripts": {
     "db:local": "bash scripts/setup-supabase-local.sh",
+    "db:sync-env": "bash scripts/sync-local-supabase-env.sh",
+    "dev:ensure-supabase": "bash scripts/ensure-local-supabase.sh",
+    "db:reset": "pnpm --filter @voxori/database run db:reset",
+    "db:migrate": "pnpm --filter @voxori/database run db:migrate",
+    "db:migrate:remote": "pnpm --filter @voxori/database run db:push",
+    "db:seed": "tsx scripts/seed-dev.ts",
+    "db:types": "pnpm --filter @voxori/database run gen-types",
     "build": "turbo run build",
+    "predev": "bash scripts/ensure-local-supabase.sh",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "verify": "turbo run lint typecheck test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "supabase:link": "bash scripts/supabase-link-remote.sh"
   },
   "devDependencies": {
+    "@voxori/database": "workspace:*",
+    "@voxori/shared": "workspace:*",
     "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
     "turbo": "^2.3.3",
     "typescript": "^5.7.2"
   },

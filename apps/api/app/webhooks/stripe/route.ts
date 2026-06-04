@@ -3,9 +3,13 @@ import Stripe from 'stripe';
 import { createServiceRoleClient } from '@voxori/database/client';
 import type { Database } from '@voxori/database';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-03-25.dahlia',
-});
+function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+  return new Stripe(key, { apiVersion: '2026-03-25.dahlia' });
+}
 
 export async function POST(request: NextRequest) {
   const signature = request.headers.get('stripe-signature');
@@ -13,12 +17,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 });
   }
 
-  // Must use raw body string for signature verification — NOT request.json()
   const body = await request.text();
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(
+    event = getStripe().webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
@@ -32,21 +35,66 @@ export async function POST(request: NextRequest) {
 
   try {
     switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const customerId = session.customer as string | null;
+        const tenantId = session.metadata?.tenant_id;
+        const planFromMeta = session.metadata?.voxori_plan as string | undefined;
+
+        type TenantPlan = Database['public']['Enums']['plan_tier'];
+        const validPlans: TenantPlan[] = ['starter', 'professional', 'growth', 'agency'];
+        const planUpdate: TenantPlan | undefined =
+          planFromMeta && validPlans.includes(planFromMeta as TenantPlan)
+            ? (planFromMeta as TenantPlan)
+            : undefined;
+
+        if (customerId && tenantId) {
+          const updatePayload: Database['public']['Tables']['tenants']['Update'] = {
+            stripe_customer_id: customerId,
+            ...(planUpdate ? { plan: planUpdate } : {}),
+          };
+          if (typeof session.subscription === 'string') {
+            updatePayload.stripe_subscription_id = session.subscription;
+          }
+
+          await db.from('tenants').update(updatePayload).eq('id', tenantId);
+        } else if (customerId) {
+          await db
+            .from('tenants')
+            .update({
+              stripe_customer_id: customerId,
+              ...(planUpdate ? { plan: planUpdate } : {}),
+              ...(typeof session.subscription === 'string'
+                ? { stripe_subscription_id: session.subscription }
+                : {}),
+            })
+            .eq('stripe_customer_id', customerId);
+        }
+
+        await db.from('audit_log').insert({
+          tenant_id: tenantId ?? null,
+          action: 'stripe.checkout.completed',
+          resource_type: 'checkout_session',
+          resource_id: session.id,
+          metadata: { customerId, planFromMeta },
+        });
+        break;
+      }
+
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
         const status = subscription.status;
 
-        // Map Stripe price ID to our plan tier — look up via metadata or price ID
-        // For now, derive from subscription metadata if set, else keep existing plan
         const planFromMeta = subscription.metadata?.voxori_plan as string | undefined;
 
         type TenantPlan = Database['public']['Enums']['plan_tier'];
         const validPlans: TenantPlan[] = ['starter', 'professional', 'growth', 'agency'];
-        const planUpdate: TenantPlan | undefined = planFromMeta && validPlans.includes(planFromMeta as TenantPlan)
-          ? (planFromMeta as TenantPlan)
-          : undefined;
+        const planUpdate: TenantPlan | undefined =
+          planFromMeta && validPlans.includes(planFromMeta as TenantPlan)
+            ? (planFromMeta as TenantPlan)
+            : undefined;
 
         const updatePayload: Database['public']['Tables']['tenants']['Update'] = {
           stripe_subscription_id: subscription.id,
@@ -75,7 +123,6 @@ export async function POST(request: NextRequest) {
         const invoice = event.data.object as Stripe.Invoice;
         const customerId = invoice.customer as string;
 
-        // Confirm subscription is active for this customer
         const { data: tenant } = await db
           .from('tenants')
           .select('id, plan')
@@ -138,7 +185,6 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        // Ignore unhandled events — return 200 so Stripe doesn't retry
         break;
     }
   } catch (err) {

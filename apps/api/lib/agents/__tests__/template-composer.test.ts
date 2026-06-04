@@ -12,6 +12,8 @@ const BASE_INPUT = {
   tenantId: 'tenant-1',
   agentName: 'Test Agent',
   businessProfile: { businessName: 'Acme Realty', city: 'Austin' },
+  toolSecret: 'test-tool-secret',
+  apiBaseUrl: 'https://api.example.com',
 };
 
 describe('composeAssistantPayload', () => {
@@ -27,11 +29,19 @@ describe('composeAssistantPayload', () => {
     expect(systemMsg).toContain('Acme Realty');
   });
 
-  it('includes all defaultTools as function definitions', () => {
+  it('includes HTTP tools with server url and secret header', () => {
     const payload = composeAssistantPayload(BASE_INPUT);
-    const toolNames = payload.model.tools.map((t: any) => t.function.name);
-    expect(toolNames).toContain('log-lead');
-    expect(toolNames).toContain('book-showing');
+    const logLead = payload.model.tools.find(
+      (t: { function: { name: string } }) => t.function.name === 'log-lead'
+    ) as {
+      function: { name: string; parameters: { additionalProperties: boolean } };
+      server: { url: string; headers: Record<string, string> };
+    };
+
+    expect(logLead).toBeDefined();
+    expect(logLead.server.url).toBe('https://api.example.com/tools/log-lead');
+    expect(logLead.server.headers['X-Voxori-Tool-Secret']).toBe('test-tool-secret');
+    expect(logLead.function.parameters.additionalProperties).toBe(false);
   });
 
   it('includes Deepgram transcriber with nova-2 model', () => {

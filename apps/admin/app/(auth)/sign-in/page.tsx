@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 
-export default function AdminSignInPage() {
+function AdminSignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -54,46 +54,64 @@ export default function AdminSignInPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
-            <label htmlFor="email" className="text-sm font-medium text-gray-300">Email</label>
+            <label htmlFor="email" className="text-sm font-medium text-gray-300">
+              Email
+            </label>
             <input
               id="email"
               type="email"
               autoComplete="email"
               required
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               className="flex h-10 w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50"
               placeholder="admin@voxori.com"
             />
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="password" className="text-sm font-medium text-gray-300">Password</label>
+            <label htmlFor="password" className="text-sm font-medium text-gray-300">
+              Password
+            </label>
             <input
               id="password"
               type="password"
               autoComplete="current-password"
               required
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               className="flex h-10 w-full rounded-md border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-white placeholder-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50"
               placeholder="••••••••"
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-red-400">{error}</p>
-          )}
+          {error && <p className="text-sm text-red-400">{error}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex h-10 w-full items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none"
+            className="inline-flex h-10 w-full cursor-pointer items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:pointer-events-none disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
       </div>
     </div>
+  );
+}
+
+function SignInFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-950">
+      <p className="text-sm text-gray-400">Loading sign in…</p>
+    </div>
+  );
+}
+
+export default function AdminSignInPage() {
+  return (
+    <Suspense fallback={<SignInFallback />}>
+      <AdminSignInForm />
+    </Suspense>
   );
 }
